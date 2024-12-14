@@ -22,6 +22,15 @@ int main() {
 
     std::cout << table.contains("bob") << " " << table.contains("who") << std::endl;
 
+    table.print();
+
+    table["double"] = 13;
+
+    table.print();
+
+    for (auto it = table.begin(); it != table.end(); ++it) {
+        std::cout << *it << std::endl;
+    }
 
     return 0;
 }

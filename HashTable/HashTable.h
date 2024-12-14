@@ -10,10 +10,11 @@ class HashTable {
 private:
     List<K, T>* buckets;
     size_t num_buckets;
+    size_t cnt;
     std::function <size_t(const K&)> hashFunc;
 
 public:
-    HashTable(size_t _num_buckets = 8, std::function <size_t(const K&)> _hashFunc = std::function<size_t(const K&)>(std::hash<K>())) : num_buckets(_num_buckets), hashFunc(_hashFunc) {
+    HashTable(size_t _num_buckets = 8, std::function <size_t(const K&)> _hashFunc = std::function<size_t(const K&)>(std::hash<K>())) : num_buckets(_num_buckets), hashFunc(_hashFunc), cnt(0) {
         buckets = new List<K, T>[num_buckets];
     }
 
@@ -27,7 +28,7 @@ public:
 
 
     T& operator[](const K& key) {
-        List<K, T>* node = buckets[hashFunc(key) & num_buckets].find(key);
+        Node<K, T>* node = buckets[hashFunc(key) % num_buckets].find(key);
 
         if (nullptr == node) {
             throw std::invalid_argument("Invalid Key");
@@ -61,25 +62,29 @@ public:
     }
 
      size_t size() {
-        size_t size = 0;
-
-        for (size_t i = 0; i < num_buckets; ++i) {
-            size += buckets[i].getSize();
-        }
-
-        return size;
+        return cnt;
     }
 
     bool empty() {
-        return size() == 0;
+        return cnt == 0;
     }
 
     void insert(const K& key, const T& elem) {
+        
         buckets[hashFunc(key) % num_buckets].append(key, elem);
+        ++cnt;
+        if (loadFactor() > 0.75) {
+            resize();
+        }
     }
 
     void remove(const K& key) {
+        
         buckets[hashFunc(key) % num_buckets].remove(key);
+        --cnt;
+        if(loadFactor() < 0.25 && num_buckets > 8) {
+            resize();
+        }
     }
 
     void print() {
@@ -93,6 +98,37 @@ public:
         return buckets[hashFunc(key) % num_buckets].find(key) != nullptr;
     }
 
+    double loadFactor() const {
+        return static_cast<double>(cnt) / num_buckets;
+    }
+
+    void rehash(size_t new_num_buckets) {
+        List<K, T>* new_buckets = new List<K, T>[new_num_buckets];
+
+        for (size_t i = 0; i < num_buckets; ++i) {
+            Node<K, T>* node = buckets[i].head;
+            while (node != nullptr) {
+                new_buckets[hashFunc(node->key) % new_num_buckets].append(node->key, node->elem);
+                node = node->next;
+            }
+        }
+
+        for (int i = 0; i < num_buckets; ++i) {
+            buckets[i].clear();
+        }
+
+        delete[] buckets;
+        buckets = new_buckets;
+        num_buckets = new_num_buckets;
+    }
+
+    void resize() {
+        if (loadFactor() > 0.75) {
+            rehash(num_buckets * 2);
+        } else if (loadFactor() < 0.25 && num_buckets > 8) {
+            rehash(num_buckets / 2);
+        }
+    }
 
     class iterator {
     private:
@@ -103,6 +139,10 @@ public:
         iterator(HashTable<K, T>* _ptr, Node<K, T>* _node, size_t _idx) : ptr(_ptr), node(_node), idx(_idx) {}
 
         iterator& operator++() {
+            if (!node) {
+                return *this;
+            }
+
             if (nullptr != node->next) {
                 node = node->next;
             }
@@ -167,10 +207,6 @@ public:
     }
 
 };
-
-
-
-
 
 
 #endif
