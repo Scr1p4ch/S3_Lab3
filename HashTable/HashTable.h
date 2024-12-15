@@ -218,6 +218,10 @@ public:
         T* operator->() {
             return node;
         }
+
+        const T* operator->() const {
+            return node;
+        }
     };
 
     Iterator begin() {

@@ -3,34 +3,27 @@
 #include "HashTable/Hash.h"
 #include "HashTable/HashTable.h"
 #include "HashTable/List.h"
+#include "HashTable/IDictionary.h"
+#include "Problems/MostFrequent.h"
+#include "Utility/Sequence.h"
+
+#include "AlphabetIndex/AlphabetIndex.h"
+
+
+template<typename K, typename T>
+std::ostream& operator<<(std::ostream& os, const std::pair<K, T>& p) {
+    os << p.first << ": " << p.second;
+    return os;
+}
 
 int main() {
     
+    startBuildingAlphabetIndex("InputText.txt", 4, 3);
 
-    HashTable<std::string, int> table(16);
-
-    table.insert("bob", 3);
-    table.insert("cat", 15);
-    table.insert("double", 29);
     
 
-    table.print();
 
-    std::cout << table.contains("bob") << " " << table.contains("who") << std::endl;
 
-    table.remove("bob");
-
-    std::cout << table.contains("bob") << " " << table.contains("who") << std::endl;
-
-    table.print();
-
-    table["double"] = 13;
-
-    table.print();
-
-    for (auto it = table.begin(); it != table.end(); ++it) {
-        std::cout << *it << std::endl;
-    }
 
     return 0;
 }
