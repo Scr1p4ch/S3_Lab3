@@ -28,7 +28,7 @@ struct List {
     Node<K, T>* last();
 
     List<K, T> & operator=(const List<K, T>& other) {
-        if (this != other) {
+        if (this != &other) {
             clear();
 
             if (nullptr != other.head) {

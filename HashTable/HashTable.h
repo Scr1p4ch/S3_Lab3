@@ -2,21 +2,24 @@
 #define _HASHTABLE_H_
 
 #include <functional>
+#include "Concepts.h"
 #include "Hash.h"
 #include "List.h"
 
-template <typename K, typename T>
+template <typename K, typename T, typename hashFunc = std::hash<K>>
+requires Hashable<K, hashFunc> && EqualityComparable<K>
 class HashTable {
 private:
     List<K, T>* buckets;
     size_t num_buckets;
     size_t cnt;
-    std::function <size_t(const K&)> hashFunc;
 
 public:
-    HashTable(size_t _num_buckets = 8, std::function <size_t(const K&)> _hashFunc = std::function<size_t(const K&)>(std::hash<K>())) : num_buckets(_num_buckets), hashFunc(_hashFunc), cnt(0) {
+    HashTable(size_t _num_buckets = 8) : num_buckets(_num_buckets), cnt(0) {
         buckets = new List<K, T>[num_buckets];
     }
+
+    inline size_t Hash(const K& key) const { return hashFunc{}(key) % num_buckets; }
 
     ~HashTable() {
         for (size_t i = 0; i < num_buckets; ++i) {
@@ -28,7 +31,7 @@ public:
 
 
     T& operator[](const K& key) {
-        Node<K, T>* node = buckets[hashFunc(key) % num_buckets].find(key);
+        Node<K, T>* node = buckets[Hash(key)].find(key);
 
         if (nullptr == node) {
             throw std::invalid_argument("Invalid Key");
@@ -38,13 +41,34 @@ public:
         }
     }
 
-    HashTable<K, T>& operator=(const HashTable<K, T>& other) {
+    const T& operator[](const K& key) const {
+        Node<K, T>* node = buckets[Hash(key)].find(key);
+        if (nullptr == node) {
+            throw std::invalid_argument("Invalid Key");
+        }
+        else {
+            return node->elem;
+        }
+    }
+
+
+    HashTable(const HashTable<K, T, hashFunc>& other) {
+        num_buckets = other.num_buckets;
+
+        buckets = new List<K, T>[num_buckets];
+
+        for (size_t i = 0; i < num_buckets; ++i) {
+            buckets[i] = other.buckets[i];
+        }
+    }
+
+
+    HashTable<K, T, hashFunc>& operator=(const HashTable<K, T, hashFunc>& other) {
         if (this == &other) {
             return *this;
         }
 
         num_buckets = other.num_buckets;
-        hashFunc = other.hashFunc;
 
         for (int i = 0; i < num_buckets; ++i) {
             buckets[i].clear();
@@ -61,7 +85,11 @@ public:
         return *this;
     }
 
-     size_t size() {
+    size_t bucketCount() const {
+        return num_buckets;
+    }
+
+     size_t size() const {
         return cnt;
     }
 
@@ -71,7 +99,7 @@ public:
 
     void insert(const K& key, const T& elem) {
         
-        buckets[hashFunc(key) % num_buckets].append(key, elem);
+        buckets[Hash(key)].append(key, elem);
         ++cnt;
         if (loadFactor() > 0.75) {
             resize();
@@ -80,7 +108,7 @@ public:
 
     void remove(const K& key) {
         
-        buckets[hashFunc(key) % num_buckets].remove(key);
+        buckets[Hash(key)].remove(key);
         --cnt;
         if(loadFactor() < 0.25 && num_buckets > 8) {
             resize();
@@ -95,7 +123,7 @@ public:
     }
 
     bool contains(const K& key) const {
-        return buckets[hashFunc(key) % num_buckets].find(key) != nullptr;
+        return buckets[Hash(key)].find(key) != nullptr;
     }
 
     double loadFactor() const {
@@ -108,7 +136,7 @@ public:
         for (size_t i = 0; i < num_buckets; ++i) {
             Node<K, T>* node = buckets[i].head;
             while (node != nullptr) {
-                new_buckets[hashFunc(node->key) % new_num_buckets].append(node->key, node->elem);
+                new_buckets[hashFunc{}(node->key) % new_num_buckets].append(node->key, node->elem);
                 node = node->next;
             }
         }
@@ -130,15 +158,15 @@ public:
         }
     }
 
-    class iterator {
+    class Iterator {
     private:
         HashTable<K, T>* ptr;
         Node<K, T>* node;
         size_t idx;
     public:
-        iterator(HashTable<K, T>* _ptr, Node<K, T>* _node, size_t _idx) : ptr(_ptr), node(_node), idx(_idx) {}
+        Iterator(HashTable<K, T>* _ptr, Node<K, T>* _node, size_t _idx) : ptr(_ptr), node(_node), idx(_idx) {}
 
-        iterator& operator++() {
+        Iterator& operator++() {
             if (!node) {
                 return *this;
             }
@@ -164,44 +192,48 @@ public:
             return *this;
         }
 
-        iterator operator++(int) {
-            iterator i = *this;
+        Iterator operator++(int) {
+            Iterator i = *this;
             ++(*this);
 
             return i;
         }
 
-        bool operator!=(const iterator& i) const {
+        bool operator!=(const Iterator& i) const {
             return (ptr != i.ptr) || (node != i.node) || (idx != i.idx);
         }
 
-        bool operator==(const iterator& i) const {
+        bool operator==(const Iterator& i) const {
             return (ptr == i.ptr) && (node == i.node) && (idx == i.idx);
         }
 
-        T& operator*() {
-            return node->elem;
+        Node<K, T>& operator*() {
+            return *node;
+        }
+
+        const Node<K, T>& operator*() const {
+            return *node;
         }
 
         T* operator->() {
-            return &node->elem;
+            return node;
         }
     };
 
-    iterator begin() {
+    Iterator begin() {
         size_t idx = 0;
         
         while (idx != num_buckets && buckets[idx].getSize() == 0) {
             ++idx;
         }
 
-        iterator i(this, buckets[idx].head, idx);
+        Iterator i(this, buckets[idx].head, idx);
 
         return i;
     }
 
-    iterator end() {
-        iterator i(this, nullptr, num_buckets);
+    Iterator end() {
+        Iterator i(this, nullptr, num_buckets);
 
         return i;
     }
