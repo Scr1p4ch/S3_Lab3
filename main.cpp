@@ -5,9 +5,15 @@
 #include "HashTable/List.h"
 #include "HashTable/IDictionary.h"
 #include "Problems/MostFrequent.h"
-#include "Utility/Sequence.h"
 
-#include "AlphabetIndex/AlphabetIndex.h"
+
+#include "Tests/PtrWrapperTest.h"
+#include "Tests/DynamicArrayTest.h"
+#include "Tests/SequenceTest.h"
+#include "Utility/ArraySequence.h"
+
+
+
 
 
 template<typename K, typename T>
@@ -18,12 +24,9 @@ std::ostream& operator<<(std::ostream& os, const std::pair<K, T>& p) {
 
 int main() {
     
-    startBuildingAlphabetIndex("InputText.txt", 4, 3);
-
-    
-
-
-
+    PtrWrapperTest();
+    DynamicArrayTest();
+    ArraySequenceTest();
 
     return 0;
 }

@@ -17,14 +17,9 @@ public:
         }
     }
 
-    void clear() {
-        arr = DynamicArray<T>();
-    }
-
     ArraySequence(const ArraySequence & other) : arr(other.arr) {}
 
     ~ArraySequence() = default;
-
 
     ArraySequence<T>* concat(ArraySequence<T>* _arr) {
         int current = arr.getCurrent();
@@ -55,15 +50,11 @@ public:
         return arr.getSize();
     }
 
-    int getCurrent() const {
-        return arr.getCurrent();
-    }
-
     T& operator[](int idx) {
         return arr[idx];
     }
 
-    const T& operator[](int idx) const {
+    T operator[](int idx) const {
         return arr[idx];
     }
 
@@ -73,7 +64,7 @@ public:
     */
 
     void append(const T & elem) {
-        arr[arr.getCurrent() + 1] = elem;
+        arr.append(elem);
     }
     
 

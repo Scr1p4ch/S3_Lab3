@@ -2,6 +2,7 @@
 #define _PTR_WRAPPER_H_
 
 #include "FirstLabUtility/Move.h"
+#include <string>
 
 template <typename T>
 class PtrWrapper {

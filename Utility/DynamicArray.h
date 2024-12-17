@@ -1,8 +1,8 @@
 #ifndef _DYNAMIC_ARRAY_H_
 #define _DYNAMIC_ARRAY_H_
 
+#include <exception>
 #include "PtrWrapper.h"
-#include <iostream>
 
 template <typename T>
 class DynamicArray {
@@ -12,9 +12,9 @@ class DynamicArray {
     int current;
 
 public:
-    DynamicArray() : size(16), ptr(new T[size]), current(-1) {}
+    DynamicArray() : size(16), ptr(new T[size]), current(size - 1) {}
 
-    DynamicArray(int _size) : size(_size), ptr(new T[size]), current(-1) {}
+    DynamicArray(int _size) : size(_size), ptr(new T[size]), current(size - 1) {}
 
     DynamicArray(const DynamicArray & other) : size(other.size), ptr(new T[size]), current(other.current) {
         for (int i = 0; i < size; ++i) {
@@ -22,26 +22,19 @@ public:
         }
     } 
 
-    DynamicArray& operator=(const DynamicArray & other) {
-        ptr.reset();
-
-        size = other.size;
-        ptr = new T[size];
-
-        for (int i = 0; i < size; ++i) {
-            ptr[i] = other.ptr[i];
-        }
-
-        current = other.current;
-
-        return *this;
-    }
-
     ~DynamicArray() = default;
+
+    void append(const T& elem) {
+        ++current;
+        if (current >= size) {
+            resize(2 * current);
+        }
+        ptr[current] = elem;
+    }
 
     T& operator[] (int idx) {
         if (idx >= size) {
-            resize(idx);
+            throw std::out_of_range("Dyn[]: Invalid index");
         }
         if (current < idx) {
             current = idx;
@@ -50,15 +43,12 @@ public:
         return ptr[idx];
     }
 
-    const T& operator[] (int idx) const {
-        if (idx >= size) {
-            throw std::invalid_argument("Invalid index");
+    const T& operator[](int idx) const {
+        if (idx > current) {
+            throw std::out_of_range("Dyn[]: Invalid index/current");
         }
-
         return ptr[idx];
     }
-
-
 
     int getSize() const {
         return size;
@@ -75,12 +65,7 @@ public:
 
 template <typename T>
 void DynamicArray<T>::resize(int _idx) {
-    int new_size = size;
-    current = _idx;
-
-    while (new_size <= _idx) {
-        new_size *= 2;
-    }
+    int new_size = _idx;
 
     T* new_ptr = new T[new_size];
 

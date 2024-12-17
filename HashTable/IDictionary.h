@@ -48,6 +48,14 @@ public:
         hashTable.remove(key);
     }
 
+    T& operator[](const K& key) {
+        return hashTable[key];
+    }
+
+    const T& operator[](const K& key) const {
+        return hashTable[key];
+    }
+
     class Iterator {
     private:
         typename HashTable<K, T, hashFunc>::Iterator it;
