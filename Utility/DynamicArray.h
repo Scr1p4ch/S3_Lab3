@@ -60,6 +60,11 @@ public:
 
     void resize(int _idx);
 
+    void clear() {
+        ptr.reset(new T[size]);
+        current = 0;
+    }
+
 };
 
 

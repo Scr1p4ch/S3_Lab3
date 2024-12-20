@@ -39,6 +39,9 @@ void ArraySequenceConstrTest() {
     for (int i = 0; i < 5; ++i) {
         assert(i * 10 == c[i]);
     }
+
+    c.clear();
+    assert(0 == c.getCurrent());
 }
 
 void ArraySequenceFuncTest() {
@@ -83,6 +86,7 @@ void ArraySequenceFuncTest() {
     assert(32 == a.getSize());
     assert(170 == a.getLast());
 
+    a.clear();
 }
 
 

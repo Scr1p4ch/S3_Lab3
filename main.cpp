@@ -9,8 +9,11 @@
 
 #include "Tests/PtrWrapperTest.h"
 #include "Tests/DynamicArrayTest.h"
-#include "Tests/SequenceTest.h"
-#include "Utility/ArraySequence.h"
+//#include "Tests/SequenceTest.h"
+
+#include "Utility/FirstLabUtility/Sequence.h"
+#include "Problems/AlphabetIndex/Rows.h"
+
 
 
 
@@ -23,10 +26,25 @@ std::ostream& operator<<(std::ostream& os, const std::pair<K, T>& p) {
 }
 
 int main() {
-    
-    PtrWrapperTest();
-    DynamicArrayTest();
-    ArraySequenceTest();
 
+    ArrSequence<int> a;
+
+    std::cout << a.get_size() << std::endl;
+
+    a.append(13);
+    a.append(15);
+
+    a.prepend(17);
+    a.pop_back();
+    a.pop_front();
+
+    std::cout << a.get_size() << std::endl;
+
+    for (int i : a) {
+        std:: cout << i << " ";
+    }
+
+    std::cout << std::endl;
+    
     return 0;
 }
