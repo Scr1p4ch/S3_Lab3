@@ -2,9 +2,11 @@
 #define _SPARCE_VECTOR_H_
 
 #include "../HashTable/IDictionary.h"
+#include "ConceptVect.h"
 #include <exception>
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 class SparceVector {
 private:
     IDictionary<size_t, T> dict;
@@ -45,14 +47,17 @@ public:
         T operator=(const T& elem);
         T operator+=(const T& elem);
         T operator-=(const T& elem);
-        T operator*=(const T& elem);
-        T operator/=(const T& elem);
 
-        T operator++();
-        T operator++(int);
+        T operator*=(const T& elem) requires MultipliableAndDivisible<T>;
 
-        T operator--();
-        T operator--(int);
+        
+        T operator/=(const T& elem) requires MultipliableAndDivisible<T>;
+
+        T operator++() requires Incrementable<T>;
+        T operator++(int) requires Incrementable<T>;
+
+        T operator--() requires Decrementable<T>;
+        T operator--(int) requires Decrementable<T>;
     };
 
     friend class Interm;
@@ -70,6 +75,7 @@ public:
 };
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 SparceVector<dim, T>& SparceVector<dim, T>::operator+=(SparceVector & vect) {
     for (size_t i = 0; i < dim; ++i) {
         this->operator[](i) += vect[i];
@@ -79,6 +85,7 @@ SparceVector<dim, T>& SparceVector<dim, T>::operator+=(SparceVector & vect) {
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 SparceVector<dim, T>& SparceVector<dim, T>::operator-=(SparceVector & vect) {
     for (size_t i = 0; i < dim; ++i) {
         this->operator[](i) -= vect[i];
@@ -88,6 +95,7 @@ SparceVector<dim, T>& SparceVector<dim, T>::operator-=(SparceVector & vect) {
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 SparceVector<dim, T> operator+(SparceVector<dim, T>& v1, SparceVector<dim, T>& v2) {
     SparceVector<dim, T> result;
 
@@ -98,6 +106,7 @@ SparceVector<dim, T> operator+(SparceVector<dim, T>& v1, SparceVector<dim, T>& v
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 SparceVector<dim, T> operator-(SparceVector<dim, T>& v1, SparceVector<dim, T>& v2) {
     SparceVector<dim, T> result;
 
@@ -108,6 +117,7 @@ SparceVector<dim, T> operator-(SparceVector<dim, T>& v1, SparceVector<dim, T>& v
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 T SparceVector<dim, T>::Interm::operator=(const T& elem) {
     if (elem == master->default_elem) {
         Remove();
@@ -119,6 +129,7 @@ T SparceVector<dim, T>::Interm::operator=(const T& elem) {
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 T SparceVector<dim, T>::Interm::operator+=(const T& elem) {
     T& location = Provide();
     location += elem;
@@ -131,6 +142,7 @@ T SparceVector<dim, T>::Interm::operator+=(const T& elem) {
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 T SparceVector<dim, T>::Interm::operator-=(const T& elem) {
     T& location = Provide();
     location -= elem;
@@ -143,7 +155,8 @@ T SparceVector<dim, T>::Interm::operator-=(const T& elem) {
 }
 
 template <size_t dim, typename T>
-T SparceVector<dim, T>::Interm::operator*=(const T& elem) {
+requires AddableAndSubtractable<T>
+T SparceVector<dim, T>::Interm::operator*=(const T& elem) requires MultipliableAndDivisible<T> {
     T& location = Provide();
     location *= elem;
     T res = location;
@@ -155,7 +168,8 @@ T SparceVector<dim, T>::Interm::operator*=(const T& elem) {
 }
 
 template <size_t dim, typename T>
-T SparceVector<dim, T>::Interm::operator/=(const T& elem) {
+requires AddableAndSubtractable<T>
+T SparceVector<dim, T>::Interm::operator/=(const T& elem) requires MultipliableAndDivisible<T> {
     T& location = Provide();
     location /= elem;
     T res = location;
@@ -167,6 +181,7 @@ T SparceVector<dim, T>::Interm::operator/=(const T& elem) {
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 SparceVector<dim, T>::Interm::operator T() {
     if (master->dict.containsKey(index)) {
         return master->dict[index];
@@ -175,6 +190,7 @@ SparceVector<dim, T>::Interm::operator T() {
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 T& SparceVector<dim, T>::Interm::Provide() {
     if (master->dict.containsKey(index)) {
         return master->dict[index];
@@ -186,6 +202,7 @@ T& SparceVector<dim, T>::Interm::Provide() {
 }
 
 template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
 void SparceVector<dim, T>::Interm::Remove() {
     if (master->dict.containsKey(index)) {
         master->dict.remove(index);
@@ -197,7 +214,8 @@ void SparceVector<dim, T>::Interm::Remove() {
 
 
 template <size_t dim, typename T>
-T SparceVector<dim, T>::Interm::operator++() {
+requires AddableAndSubtractable<T>
+T SparceVector<dim, T>::Interm::operator++() requires Incrementable<T>{
     T& location = Provide();
     T res = ++location;
 
@@ -208,7 +226,8 @@ T SparceVector<dim, T>::Interm::operator++() {
 }
 
 template <size_t dim, typename T>
-T SparceVector<dim, T>::Interm::operator++(int) {
+requires AddableAndSubtractable<T>
+T SparceVector<dim, T>::Interm::operator++(int) requires Incrementable<T>{
     T& location = Provide();
     T res = location++;
 
@@ -219,7 +238,8 @@ T SparceVector<dim, T>::Interm::operator++(int) {
 }
 
 template <size_t dim, typename T>
-T SparceVector<dim, T>::Interm::operator--() {
+requires AddableAndSubtractable<T>
+T SparceVector<dim, T>::Interm::operator--() requires Decrementable<T>{
     T& location = Provide();
     T res = --location;
 
@@ -230,7 +250,8 @@ T SparceVector<dim, T>::Interm::operator--() {
 }
 
 template <size_t dim, typename T>
-T SparceVector<dim, T>::Interm::operator--(int) {
+requires AddableAndSubtractable<T>
+T SparceVector<dim, T>::Interm::operator--(int) requires Decrementable<T>{
     T& location = Provide();
     T res = location--;
 
