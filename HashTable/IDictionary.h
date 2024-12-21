@@ -14,6 +14,16 @@ private:
 
 public:
     IDictionary(size_t _num_buckets = 8) : hashTable(_num_buckets) {}
+
+    IDictionary(const IDictionary & other) : hashTable(other.hashTable) {}
+
+    IDictionary& operator=(const IDictionary & other) {
+        if (this != &other) {
+            hashTable = other.hashTable;
+        }
+
+        return *this;
+    }
     
     size_t getCount() const {
         return hashTable.size();

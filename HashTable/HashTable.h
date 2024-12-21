@@ -54,6 +54,7 @@ public:
 
     HashTable(const HashTable<K, T, hashFunc>& other) {
         num_buckets = other.num_buckets;
+        cnt = other.cnt;
 
         buckets = new List<K, T>[num_buckets];
 

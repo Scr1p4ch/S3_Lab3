@@ -77,8 +77,16 @@ AlphabetIndex buildIndexFromFile(const std::string & inFilePath, int pageSize, c
     inputFile.close();
     std::string inputText = textBuffer.str();
 
+    /*std::transform(inputText.begin(),inputText.end(), inputText.begin(), [](char & c) {
+        if (!std::isalnum(c) && c != '\'') {
+            return ' ';
+        }
+        return static_cast<char>(std::tolower(c));
+    });
+    */
+
     for (char & ch : inputText) {
-        if (ch == '\n' || ch == '\t' || !(std::isalnum(ch))) {
+        if (ch == '\n' || ch == '\t' || !(std::isalnum(ch)) && ch != '\'') {
             ch = ' ';
         }
         else
