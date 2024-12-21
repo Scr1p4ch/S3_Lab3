@@ -13,6 +13,8 @@
 
 #include "Utility/FirstLabUtility/Sequence.h"
 #include "Problems/AlphabetIndex/Rows.h"
+#include "Problems/AlphabetIndex/HelperFunctions.h"
+#include "Problems/AlphabetIndex/AlphabetIndex.h"
 
 
 
@@ -27,24 +29,8 @@ std::ostream& operator<<(std::ostream& os, const std::pair<K, T>& p) {
 
 int main() {
 
-    ArrSequence<int> a;
+    startBuildingIndex("input.txt", 3, 5);
 
-    std::cout << a.get_size() << std::endl;
 
-    a.append(13);
-    a.append(15);
-
-    a.prepend(17);
-    a.pop_back();
-    a.pop_front();
-
-    std::cout << a.get_size() << std::endl;
-
-    for (int i : a) {
-        std:: cout << i << " ";
-    }
-
-    std::cout << std::endl;
-    
     return 0;
 }

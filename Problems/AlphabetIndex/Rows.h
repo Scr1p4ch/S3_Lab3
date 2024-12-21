@@ -22,18 +22,13 @@ public:
         return _row;
     }
 
-    std::string setRow(const std::string & other_row) {
+    void setRow(const std::string & other_row) {
         _row = other_row;
     }
 
-    std::string getRow() {
+    std::string getRow() const {
         return _row;
     }
-
-    const std::string& getRow() const {
-        return _row;
-    }
-
 };
 
 #endif

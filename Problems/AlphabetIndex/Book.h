@@ -11,7 +11,7 @@ public:
     Book() = default;
 
     Book(const Book & other) : _book(other._book) {}
-    Book(Book && other) noexcept : _book(Move(_book)) {}
+    Book(Book && other) noexcept : _book(Move(other._book)) {}
 
     Book & operator=(const Book & other) {
         _book = other._book;
@@ -28,6 +28,10 @@ public:
 
     size_t getPagesCount() const {
         return _book.get_size();
+    }
+
+    void addPage(const Page & _page) {
+        _book.append(_page);
     }
 
     Page operator[](size_t index) const {
