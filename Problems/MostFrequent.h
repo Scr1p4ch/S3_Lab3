@@ -3,6 +3,8 @@
 
 #include "../HashTable/Hash.h"
 #include "../HashTable/IDictionary.h"
+#include "../Utility/FirstLabUtility/Sequence.h"
+#include <algorithm>
 #include <fstream>
 
 IDictionary<std::string, int> theMostFrequentSubsequences(const std::string &in, int lmin, int lmax) {
@@ -27,6 +29,35 @@ IDictionary<std::string, int> theMostFrequentSubsequences(const std::string &in,
 void FileOutTheMostFrequentSubsequence(const std::string& in, int lmin, int lmax) {
     auto dict = theMostFrequentSubsequences(in, lmin, lmax);
 
+    ArrSequence<std::pair<std::string, int>> sortedSubsequences;
+
+    std::string outFilePath = "D:/LabWorks/S3_Lab3/Tests/Subsequence.txt";
+
+    std::ofstream outFile(outFilePath);
+
+    if (!outFile) {
+        throw std::runtime_error("Can't open the file");
+    } 
+
+    for (auto it = dict.begin(); it != dict.end(); ++it) {
+        sortedSubsequences.append(*it);
+    }
+
+    std::sort(sortedSubsequences.begin(), sortedSubsequences.end(), [](const auto& a, const auto& b) {
+        return a.second > b.second;
+    });
+
+    for (const auto& [key, count] : sortedSubsequences) {
+        outFile << "Subsequence: " << key << "\tCount: " << count << std::endl; 
+    }
+    
+    outFile.close();
+}
+
+/*
+void FileOutTheMostFrequentSubsequence(const std::string& in, int lmin, int lmax) {
+    auto dict = theMostFrequentSubsequences(in, lmin, lmax);
+
     std::string outFilePath = "D:/LabWorks/S3_Lab3/Tests/Subsequence.txt";
 
     std::ofstream outFile(outFilePath);
@@ -42,5 +73,6 @@ void FileOutTheMostFrequentSubsequence(const std::string& in, int lmin, int lmax
 
     outFile.close();
 }
+*/
 
 #endif

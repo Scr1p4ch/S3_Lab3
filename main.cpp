@@ -18,8 +18,8 @@
 
 #include "Problems/SparceVector.h"
 
-
-
+#include <QLineEdit>
+#include <QScrollBar>
 #include <QApplication>
 #include <QWidget>
 #include <QPushButton>
@@ -28,6 +28,7 @@
 #include <QStackedWidget>
 #include <QMainWindow>
 #include <QLabel>
+#include <QList>
 #include <QFileDialog>
 #include <QLineEdit>
 #include <QIntValidator>
@@ -37,6 +38,11 @@
 #include <QEventLoop>
 #include <QTimer>
 #include <QSplitter>
+#include <QTextCursor>
+#include <QTextCharFormat>
+#include <QTextBrowser>
+#include <QBrush>
+
 
 
 void delay(int milliseconds) {
@@ -178,11 +184,9 @@ QWidget* createSecondWindow(QStackedWidget* stackedWidget) {
     // Разделитель экрана (1 к 3)
     auto* splitter = new QSplitter(Qt::Horizontal, widget);
 
-    // Первая часть (маленький текстовый виджет)
-    auto* smallTextWidget = new QTextEdit(widget);
-    smallTextWidget->setPlaceholderText("Текст из output.txt");
-    smallTextWidget->setReadOnly(true);
-    smallTextWidget->setMinimumWidth(100);
+    // Первая часть (маленький текстовый виджет с гиперссылками)
+    auto* smallTextWidget = new QTextBrowser(widget);
+    smallTextWidget->setOpenLinks(false);
 
     // Вторая часть (большой текстовый виджет)
     auto* largeTextWidget = new QTextEdit(widget);
@@ -191,8 +195,9 @@ QWidget* createSecondWindow(QStackedWidget* stackedWidget) {
 
     splitter->addWidget(smallTextWidget);
     splitter->addWidget(largeTextWidget);
-    splitter->setStretchFactor(0, 1); // Устанавливаем соотношение 1
-    splitter->setStretchFactor(1, 3); // Устанавливаем соотношение 3
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 3);
+
 
     QObject::connect(startButton, &QPushButton::clicked, [=]() {
         QString filePath = filePathInput->text();
@@ -207,15 +212,30 @@ QWidget* createSecondWindow(QStackedWidget* stackedWidget) {
         int pageSize = pageSizeText.toInt();
         int rowSize = rowSizeText.toInt();
 
+        if (pageSize <= 0 || rowSize <= 0) {
+            QMessageBox::warning(widget, "Ошибка", "Размер страницы и размер строки должны быть больше нуля!");
+            return;
+        }
+
         try {
             startBuildingIndex(filePath.toStdString(), pageSize, rowSize);
 
-            // Чтение текста из файлов
             QFile outputFile("D:/LabWorks/S3_Lab3/Tests/output.txt");
             QFile bookOutputFile("D:/LabWorks/S3_Lab3/Tests/bookOutput.txt");
 
             if (outputFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                smallTextWidget->setText(outputFile.readAll());
+                QString content;
+                QTextStream in(&outputFile);
+                while (!in.atEnd()) {
+                    QString line = in.readLine();
+                    QStringList parts = line.split(":");
+                    if (parts.size() == 2) {
+                        QString word = parts[0].trimmed();
+                        QString occurrences = parts[1].trimmed();
+                        content.append(QString("<a href='%1'>%1</a>: %2<br>").arg(word, occurrences));
+                    }
+                }
+                smallTextWidget->setHtml(content);
                 outputFile.close();
             } else {
                 smallTextWidget->setText("Не удалось открыть output.txt");
@@ -227,13 +247,64 @@ QWidget* createSecondWindow(QStackedWidget* stackedWidget) {
             } else {
                 largeTextWidget->setText("Не удалось открыть bookOutput.txt");
             }
-
         } catch (const std::exception& ex) {
             QMessageBox::critical(widget, "Ошибка", QString("Произошла ошибка: %1").arg(ex.what()));
         }
     });
 
-    // Добавление виджетов в основной макет
+    QObject::connect(smallTextWidget, &QTextBrowser::anchorClicked, [=](const QUrl& url) {
+    QString word = url.toString(); // Слово из клика
+    static QTextCursor cursor(largeTextWidget->document());
+    static QString lastWord; // Для отслеживания последнего слова
+
+    // Если выбрано новое слово, начинаем поиск с начала документа
+    if (lastWord != word) {
+        cursor = QTextCursor(largeTextWidget->document());
+        cursor.movePosition(QTextCursor::Start);
+        lastWord = word;
+    }
+
+    // Сброс предыдущего выделения
+    QTextEdit::ExtraSelection clearSelection;
+    clearSelection.cursor = cursor;
+    clearSelection.format.setBackground(Qt::transparent);
+    largeTextWidget->setExtraSelections({clearSelection});
+
+    // Поиск слова в тексте
+    cursor = largeTextWidget->document()->find(word, cursor);
+
+    // Если слово не найдено с текущей позиции, начать поиск заново
+    if (cursor.isNull()) {
+        cursor = QTextCursor(largeTextWidget->document());
+        cursor.movePosition(QTextCursor::Start);
+        cursor = largeTextWidget->document()->find(word, cursor);
+    }
+
+    if (!cursor.isNull()) {
+        QTextEdit::ExtraSelection selection;
+        selection.cursor = cursor;
+        selection.format.setBackground(Qt::yellow);
+        largeTextWidget->setExtraSelections({selection});
+
+        // Установить курсор и прокрутить к нему
+        largeTextWidget->setTextCursor(cursor);
+        largeTextWidget->ensureCursorVisible();
+
+        // Принудительно центрируем строку с курсором
+        QRect cursorRect = largeTextWidget->cursorRect(cursor);
+        largeTextWidget->verticalScrollBar()->setValue(
+            largeTextWidget->verticalScrollBar()->value() + cursorRect.top() - largeTextWidget->height() / 2
+        );
+
+        // Перемещаем курсор на следующий символ, чтобы при следующем клике не находить то же слово
+        cursor.movePosition(QTextCursor::NextCharacter);
+    } else {
+        QMessageBox::information(widget, "Не найдено", QString("Слово '%1' не найдено в тексте.").arg(word));
+    }
+});
+
+
+
     mainLayout->addWidget(backButton);
     mainLayout->addLayout(fileLayout);
     mainLayout->addLayout(inputLayout);
@@ -255,7 +326,7 @@ QWidget* createSecondWindow(QStackedWidget* stackedWidget) {
         QPushButton:pressed {
             background-color: #1b5e20;
         }
-        QTextEdit {
+        QTextEdit, QTextBrowser {
             border: 1px solid #bdbdbd;
             font-size: 14px;
         }
@@ -270,6 +341,178 @@ QWidget* createSecondWindow(QStackedWidget* stackedWidget) {
 }
 
 
+QWidget* createThirdWindow(QStackedWidget* stackedWidget) {
+    QWidget* widget = new QWidget;
+
+    widget->setWindowTitle("Third Window");
+    widget->setMinimumWidth(500);
+    widget->setMinimumHeight(400);
+
+    // Основной макет
+    auto* mainLayout = new QVBoxLayout(widget);
+
+    // Кнопка "Назад"
+    auto* backButton = new QPushButton("Назад", widget);
+    backButton->setFixedSize(100, 30);
+    QObject::connect(backButton, &QPushButton::clicked, [=]() {
+        stackedWidget->setCurrentIndex(0);
+    });
+
+    // Поля для ввода lmin и lmax
+    auto* lminInput = new QLineEdit(widget);
+    lminInput->setPlaceholderText("lmin (неотрицательное число)");
+    lminInput->setValidator(new QIntValidator(1, 10000, widget));
+
+    auto* lmaxInput = new QLineEdit(widget);
+    lmaxInput->setPlaceholderText("lmax (неотрицательное число)");
+    lmaxInput->setValidator(new QIntValidator(1, 10000, widget));
+
+    auto* inputLayout = new QHBoxLayout();
+    inputLayout->addWidget(lminInput);
+    inputLayout->addWidget(lmaxInput);
+
+    // Поле для ввода строки
+    auto* stringInput = new QLineEdit(widget);
+    stringInput->setPlaceholderText("Строка (до 50 символов, без пробелов)");
+    stringInput->setMaxLength(50);
+    QObject::connect(stringInput, &QLineEdit::textChanged, [=](const QString& text) {
+        if (text.contains(' ')) {
+            stringInput->setText(text.simplified().replace(" ", ""));
+        }
+    });
+
+    // Кнопка запуска
+    auto* startButton = new QPushButton("Запустить", widget);
+    startButton->setFixedSize(150, 30);
+
+    // Поле для лога (текстовое поле)
+    auto* logOutput = new QTextBrowser(widget);
+    logOutput->setReadOnly(true);
+    logOutput->setFrameStyle(QFrame::Box | QFrame::Plain);
+    logOutput->setStyleSheet("background-color: #f5f5f5; padding: 5px; font-size: 14px; text-align: left;");
+    logOutput->setOpenLinks(false); // Отключение стандартной обработки ссылок
+
+    // Добавьте переменную для отслеживания текущей позиции
+    int currentIndex = 0;
+
+    // Обработка кнопки запуска
+    QObject::connect(startButton, &QPushButton::clicked, [=, &currentIndex]() mutable {
+        QString lminText = lminInput->text();
+        QString lmaxText = lmaxInput->text();
+        QString inputText = stringInput->text();
+
+        if (lminText.isEmpty() || lmaxText.isEmpty() || inputText.isEmpty()) {
+            QMessageBox::warning(widget, "Ошибка", "Все поля должны быть заполнены!");
+            return;
+        }
+
+        int lmin = lminText.toInt();
+        int lmax = lmaxText.toInt();
+
+        if (lmin > lmax) {
+            QMessageBox::warning(widget, "Ошибка", "lmin не может быть больше lmax!");
+            return;
+        }
+
+        if (lmax <= 0 || lmin <= 0) {
+            QMessageBox::warning(widget, "Ошибка", "Числа должны быть больше нуля!");
+            return;
+        }
+
+        try {
+            // Вызов функции
+            FileOutTheMostFrequentSubsequence(inputText.toStdString(), lmin, lmax);
+
+            // Чтение результата из файла
+            QString logFilePath = "D:/LabWorks/S3_Lab3/Tests/Subsequence.txt";
+            QFile logFile(logFilePath);
+            if (logFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QString content = logFile.readAll();
+
+                // Форматирование результата в ссылки
+                QStringList lines = content.split("\n", Qt::SkipEmptyParts);
+                QString formattedContent;
+
+                for (const QString& line : lines) {
+                    QStringList parts = line.split("\t", Qt::SkipEmptyParts);
+                    if (parts.size() >= 2) {
+                        QString subsequence = parts[0].split(":")[1].trimmed();
+                        QString count = parts[1].split(":")[1].trimmed();
+
+                        formattedContent += QString("<a href=\"%1\">%1</a>: %2<br>").arg(subsequence).arg(count);
+                    }
+                }
+
+                logOutput->setHtml(formattedContent);
+
+                // Обработка клика по ссылке
+            QObject::connect(logOutput, &QTextBrowser::anchorClicked, [=, &currentIndex](const QUrl& link) mutable {
+                QString subsequence = link.toString(); // Получаем текст ссылки
+
+                // Поиск следующего вхождения, начиная с текущего индекса
+                int startIndex = inputText.indexOf(subsequence, currentIndex);
+
+                if (startIndex == -1) {
+                    // Если не найдено, начать поиск с начала строки
+                    startIndex = inputText.indexOf(subsequence, 0);
+                }
+
+                if (startIndex != -1) {
+                    // Установить выделение
+                    stringInput->setSelection(startIndex, subsequence.length());
+                    
+                    // Обновить currentIndex для учета перекрывающихся вхождений
+                    currentIndex = startIndex + 1; // Сдвигаем только на 1 символ
+                }
+            });
+
+
+                logFile.close();
+            } else {
+                logOutput->setPlainText("Не удалось открыть Subsequence.txt");
+            }
+        } catch (const std::exception& ex) {
+            QMessageBox::critical(widget, "Ошибка", QString("Произошла ошибка: %1").arg(ex.what()));
+        }
+    });
+
+    // Добавление виджетов в макет
+    mainLayout->addWidget(backButton);
+    mainLayout->addLayout(inputLayout);
+    mainLayout->addWidget(stringInput);
+    mainLayout->addWidget(startButton);
+    mainLayout->addWidget(logOutput);
+
+    // Стилизация
+    widget->setStyleSheet(R"(
+        QPushButton {
+            background-color: #2e7d32;
+            color: white;
+            border: 1px solid #1b5e20;
+            padding: 5px 15px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+        QPushButton:hover {
+            background-color: #388e3c;
+        }
+        QPushButton:pressed {
+            background-color: #1b5e20;
+        }
+        QTextEdit, QTextBrowser {
+            border: 1px solid #bdbdbd;
+            font-size: 14px;
+        }
+        QLineEdit {
+            border: 1px solid #bdbdbd;
+            padding: 5px;
+            font-size: 14px;
+        }
+    )");
+
+    return widget;
+}
+
 
 int main(int argc, char* argv[]) {
 
@@ -281,6 +524,7 @@ int main(int argc, char* argv[]) {
 
         stackedWidget->addWidget(createFirstWindow(stackedWidget));
         stackedWidget->addWidget(createSecondWindow(stackedWidget));
+        stackedWidget->addWidget(createThirdWindow(stackedWidget));
 
         auto* mainLayout = new QVBoxLayout(mainWindow);
         mainLayout->addWidget(stackedWidget);
