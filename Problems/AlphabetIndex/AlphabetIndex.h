@@ -128,7 +128,7 @@ AlphabetIndex buildIndexFromFile(const std::string & inFilePath, int pageSize, c
 }
 
 void startBuildingIndex(std::string fileName, int pageSize, int rowSize) {
-    std::string RealFileName = "D:/LabWorks/S3_Lab3/Tests/" + fileName;
+    std::string RealFileName = fileName;
     std::string outputFilePath = "D:/LabWorks/S3_Lab3/Tests/output.txt";
 
     buildIndexFromFile(RealFileName, pageSize, outputFilePath, rowSize);

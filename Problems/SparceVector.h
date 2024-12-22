@@ -74,6 +74,10 @@ public:
 
 };
 
+
+
+
+
 template <size_t dim, typename T>
 requires AddableAndSubtractable<T>
 SparceVector<dim, T>& SparceVector<dim, T>::operator+=(SparceVector & vect) {
