@@ -223,7 +223,7 @@ T SparceVector<dim, T>::Interm::operator++() requires Incrementable<T>{
     T& location = Provide();
     T res = ++location;
 
-    if (location == default_elem) {
+    if (location == master->default_elem) {
         Remove();
     }
     return res;
@@ -235,7 +235,7 @@ T SparceVector<dim, T>::Interm::operator++(int) requires Incrementable<T>{
     T& location = Provide();
     T res = location++;
 
-    if (location == default_elem) {
+    if (location == master->default_elem) {
         Remove();
     }
     return res;
@@ -247,7 +247,7 @@ T SparceVector<dim, T>::Interm::operator--() requires Decrementable<T>{
     T& location = Provide();
     T res = --location;
 
-    if (location == default_elem) {
+    if (location == master->default_elem) {
         Remove();
     }
     return res;
@@ -259,7 +259,7 @@ T SparceVector<dim, T>::Interm::operator--(int) requires Decrementable<T>{
     T& location = Provide();
     T res = location--;
 
-    if (location == default_elem) {
+    if (location == master->default_elem) {
         Remove();
     }
     return res;

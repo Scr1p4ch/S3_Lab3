@@ -14,6 +14,28 @@ void sparceVectorTest() {
         a[i] = i;
     }
 
+    ++a[0];
+    assert(1 == a[0]);
+
+    a[0]++;
+    assert(2 == a[0]);
+
+    --a[0];
+    assert(1 == a[0]);
+
+    a[0]--;
+    assert(0 == a[0]);
+
+    ++a[0];
+    a[0] *= 2;
+
+    assert(2 == a[0]);
+
+    a[0] /= 2;
+    assert(1 == a[0]);
+
+    --a[0];
+
     assert(4 == a.getRealSize());
 
     SparceVector<5, int> b;
