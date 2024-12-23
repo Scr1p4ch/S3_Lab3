@@ -70,6 +70,7 @@ public:
         }
 
         num_buckets = other.num_buckets;
+        cnt = other.cnt;
 
         for (int i = 0; i < num_buckets; ++i) {
             buckets[i].clear();

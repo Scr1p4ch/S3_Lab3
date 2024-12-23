@@ -69,6 +69,26 @@ void sparceVectorTest() {
     for (int i = 0; i < 5; ++i) {
         assert(i == a[i]);
     }
+
+
+    SparceVector<5, int> c(4);
+
+    assert(0 == c.getRealSize());
+
+    c[1] = 4;
+
+    assert(0 == c.getRealSize());
+
+    c[1] = 0;
+
+    assert(1 == c.getRealSize());
+    
+    c = SparceVectorSum(1, a, b);
+    --c[0];
+    assert(4 == c.getRealSize());
+
+    assert(1 == c[0]);
+    assert(6 == c[4]);
 }
 
 #endif

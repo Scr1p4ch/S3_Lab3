@@ -248,53 +248,50 @@ QWidget* createSecondWindow(QStackedWidget* stackedWidget) {
     });
 
     QObject::connect(smallTextWidget, &QTextBrowser::anchorClicked, [=](const QUrl& url) {
-    QString word = url.toString(); 
-    static QTextCursor cursor(largeTextWidget->document());
-    static QString lastWord; 
+        QString word = url.toString();
+        static QTextCursor cursor(largeTextWidget->document());
+        static QString lastWord;
 
+        if (lastWord != word) {
+            cursor = QTextCursor(largeTextWidget->document());
+            cursor.movePosition(QTextCursor::Start);
+            lastWord = word;
+        }
 
-    if (lastWord != word) {
-        cursor = QTextCursor(largeTextWidget->document());
-        cursor.movePosition(QTextCursor::Start);
-        lastWord = word;
-    }
+        QTextEdit::ExtraSelection clearSelection;
+        clearSelection.cursor = cursor;
+        clearSelection.format.setBackground(Qt::transparent);
+        largeTextWidget->setExtraSelections({clearSelection});
 
+        QRegularExpression regex(QString("\\b%1\\b").arg(QRegularExpression::escape(word))); // Поиск по границам слова
+        cursor = largeTextWidget->document()->find(regex, cursor);
 
-    QTextEdit::ExtraSelection clearSelection;
-    clearSelection.cursor = cursor;
-    clearSelection.format.setBackground(Qt::transparent);
-    largeTextWidget->setExtraSelections({clearSelection});
+        if (cursor.isNull()) {
+            cursor = QTextCursor(largeTextWidget->document());
+            cursor.movePosition(QTextCursor::Start);
+            cursor = largeTextWidget->document()->find(regex, cursor);
+        }
 
+        if (!cursor.isNull()) {
+            QTextEdit::ExtraSelection selection;
+            selection.cursor = cursor;
+            selection.format.setBackground(Qt::yellow);
+            largeTextWidget->setExtraSelections({selection});
 
-    cursor = largeTextWidget->document()->find(word, cursor);
+            largeTextWidget->setTextCursor(cursor);
+            largeTextWidget->ensureCursorVisible();
 
+            QRect cursorRect = largeTextWidget->cursorRect(cursor);
+            largeTextWidget->verticalScrollBar()->setValue(
+                largeTextWidget->verticalScrollBar()->value() + cursorRect.top() - largeTextWidget->height() / 2
+            );
 
-    if (cursor.isNull()) {
-        cursor = QTextCursor(largeTextWidget->document());
-        cursor.movePosition(QTextCursor::Start);
-        cursor = largeTextWidget->document()->find(word, cursor);
-    }
+            cursor.movePosition(QTextCursor::NextCharacter);
+        } else {
+            QMessageBox::information(widget, "Не найдено", QString("Слово '%1' не найдено в тексте.").arg(word));
+        }
+    });
 
-    if (!cursor.isNull()) {
-        QTextEdit::ExtraSelection selection;
-        selection.cursor = cursor;
-        selection.format.setBackground(Qt::yellow);
-        largeTextWidget->setExtraSelections({selection});
-
- 
-        largeTextWidget->setTextCursor(cursor);
-        largeTextWidget->ensureCursorVisible();
-
-        QRect cursorRect = largeTextWidget->cursorRect(cursor);
-        largeTextWidget->verticalScrollBar()->setValue(
-            largeTextWidget->verticalScrollBar()->value() + cursorRect.top() - largeTextWidget->height() / 2
-        );
-
-        cursor.movePosition(QTextCursor::NextCharacter);
-    } else {
-        QMessageBox::information(widget, "Не найдено", QString("Слово '%1' не найдено в тексте.").arg(word));
-    }
-});
 
 
 

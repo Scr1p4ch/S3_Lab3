@@ -13,7 +13,10 @@ private:
     T default_elem;
 
 public:
-    SparceVector(T _default_elem = T()): dict{}, default_elem(_default_elem) {}
+
+    SparceVector() requires DefaultConstructible<T> : dict{}, default_elem(T()) {}
+
+    SparceVector(const T & _default_elem) : dict{}, default_elem(_default_elem) {} 
 
     SparceVector(const SparceVector & other) : dict(other.dict), default_elem(other.default_elem) {}
 
@@ -100,7 +103,7 @@ SparceVector<dim, T>& SparceVector<dim, T>::operator-=(SparceVector & vect) {
 
 template <size_t dim, typename T>
 requires AddableAndSubtractable<T>
-SparceVector<dim, T> operator+(SparceVector<dim, T>& v1, SparceVector<dim, T>& v2) {
+SparceVector<dim, T> operator+(SparceVector<dim, T>& v1, SparceVector<dim, T>& v2) requires DefaultConstructible<T> {
     SparceVector<dim, T> result;
 
     for (int i = 0; i < dim; ++i) {
@@ -111,7 +114,18 @@ SparceVector<dim, T> operator+(SparceVector<dim, T>& v1, SparceVector<dim, T>& v
 
 template <size_t dim, typename T>
 requires AddableAndSubtractable<T>
-SparceVector<dim, T> operator-(SparceVector<dim, T>& v1, SparceVector<dim, T>& v2) {
+SparceVector<dim, T> SparceVectorSum(T default_elem, SparceVector<dim, T>& v1, SparceVector<dim, T>& v2) {
+    SparceVector<dim, T> result(default_elem);
+
+    for (int i = 0; i < dim; ++i) {
+        result[i] = v1[i] + v2[i];
+    }
+    return result;
+}
+
+template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
+SparceVector<dim, T> operator-(SparceVector<dim, T>& v1, SparceVector<dim, T>& v2) requires DefaultConstructible<T> {
     SparceVector<dim, T> result;
 
     for (int i = 0; i < dim; ++i) {
@@ -119,6 +133,18 @@ SparceVector<dim, T> operator-(SparceVector<dim, T>& v1, SparceVector<dim, T>& v
     }
     return result;
 }
+
+template <size_t dim, typename T>
+requires AddableAndSubtractable<T>
+SparceVector<dim, T> SparceVectorSubtraction(T default_elem ,SparceVector<dim, T>& v1, SparceVector<dim, T>& v2) {
+    SparceVector<dim, T> result(default_elem);
+
+    for (int i = 0; i < dim; ++i) {
+        result[i] = v1[i] - v2[i];
+    }
+    return result;
+}
+
 
 template <size_t dim, typename T>
 requires AddableAndSubtractable<T>

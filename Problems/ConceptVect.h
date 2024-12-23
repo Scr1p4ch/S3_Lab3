@@ -2,6 +2,7 @@
 #define _CONCEPT_VECT_H_
 
 #include <concepts>
+#include <type_traits>
 
 template <typename T>
 concept AddableAndSubtractable = requires(T a, T b) {
@@ -31,5 +32,8 @@ concept Decrementable = requires(T t) {
 
 template <typename T>
 concept IncrementableAndDecrementable = Incrementable<T> && Decrementable<T>;
+
+template <typename T>
+concept DefaultConstructible = std::is_default_constructible_v<T>;
 
 #endif
